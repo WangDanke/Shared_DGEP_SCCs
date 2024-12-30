@@ -7,7 +7,7 @@ library(stringi)
 library(GEOquery)
 library(ggplot2)
 library(FactoMineR)
-setwd("D:\\鳞癌分析\\泛鳞癌array数据\\HNSC\\GSE172120")
+setwd("D:\\SCC_DGEP_shared\\SCC_array\\HNSC\\GSE172120")
 dir = getwd()
 
 ##
