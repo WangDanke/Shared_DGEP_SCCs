@@ -128,7 +128,7 @@ save(file="finalizedNetwork_20240425.RData", SCC_EXPR, pheno_SCC, geneTree, colo
 #Fig. S7A
 ###plot combined WGCNA_params and final network
 # Define a matrix of labels for the original and all resampling runs
-c_ref = as.character(colors)##这里的reference colors是final 参数的网络的color
+c_ref = as.character(colors)##
 
 # Relabel modules in each of the resampling runs so that full and reampled modules with best overlaps have
 # the same labels. This is achieved by the function matchLabels.
@@ -145,14 +145,14 @@ pdf("WGCNA_diffParams_final.pdf",width=5,height=6)
 plotDendroAndColors(geneTree,colors,groupLabels = labels,addGuide=T,dendroLabels=F,cex.colorLabels=0.3)
 dev.off()
 
-###模块之间的相关性图,Fig 3B
+###the correlation of modules,Fig 3B
 MEs_col = orderMEs(MEs$eigengenes)
 plotEigengeneNetworks(MEs_col, "Eigengene adjacency heatmap", 
                       marDendro = c(3,3,2,4),
                       marHeatmap = c(3,4,2,2), plotDendrograms = T, 
                       xLabelsAngle = 90)
 
-###确定模块和临床信息的相关性
+###module-trait relationship
 pheno_SCC_groups = read.csv("pheno_SCC.csv",header = T,row.names = 1)
 match_trait <- match(colnames(SCC_EXPR), pheno_SCC_groups$ID)
 Traits <- pheno_SCC_groups[match_trait, -c(1,2,3,4,5,6)]
@@ -161,7 +161,7 @@ modTraitP <- corPvalueStudent(modTraitCor, 805)
 textMatrix <- paste(signif(modTraitCor, 2), "\n(", signif(modTraitP, 1), ")",sep = "")
 dim(textMatrix) <- dim(modTraitCor)
 
-##并绘制相关性热图Fig 3C
+##pheatmapFig 3C
 pdf(file = "module_trait_relationship.pdf", wi=4.5, h=7)
 labeledHeatmap(
   Matrix = modTraitCor, xLabels = names(Traits), yLabels = names(MEs$eigengenes[,-5]),
@@ -170,7 +170,7 @@ labeledHeatmap(
   cex.text = 0.7, zlim = c(-1, 1), main = paste("Module-trait relationships"))
 dev.off()
 
-##########对每个模块进行GO富集分析
+##########Go-enrich of each modules
 library(org.Hs.eg.db)
 library(clusterProfiler)
 
@@ -212,13 +212,13 @@ GO_module9<-enrichGO(gene=rownames(module9),OrgDb = "org.Hs.eg.db",ont="ALL",
                      pAdjustMethod = "BH",pvalueCutoff=0.05,qvalueCutoff=0.2,keyType="SYMBOL")
 
 ##Fig. 3D
-#######将各个模块的信息分别展示
+#######
 GO_results = GO_module9@result[c(1:5),]
 GO_results$group = "CD9_magenta"
 library(ggplot2)
-# 使用排序索引重新排列数据框
+# 
 GO_results <- GO_results[order(GO_results$group), ]
-#terms因子顺序
+#terms
 GO_results$Description <- factor(GO_results$Description, levels = GO_results$Description)
 
 plot = ggplot(GO_results, aes(x = -log10(p.adjust), y = rev(Description), fill = group)) +
