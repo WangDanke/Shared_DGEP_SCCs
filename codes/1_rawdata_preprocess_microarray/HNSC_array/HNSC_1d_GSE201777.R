@@ -1,5 +1,5 @@
 ###HNSC GSE201777 31samples
-##选择工作路径
+##
 library(affy)
 library(limma)
 library(biomaRt)
