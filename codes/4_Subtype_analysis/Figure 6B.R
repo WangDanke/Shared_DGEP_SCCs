@@ -9,10 +9,10 @@ GO_results$group = "survival_genes"
 GO_results<-enrichGO(gene=genes,OrgDb = "org.Hs.eg.db",ont="ALL",
                                           pAdjustMethod = "BH",pvalueCutoff=0.05,qvalueCutoff=0.2,keyType="SYMBOL")
 
-#terms因子顺序
+#
 GO_results$Description <- factor(GO_results$Description, levels = GO_results$Description)
 
-#展示的基因，我们选择每个terms展示5个基因，实际情况可以展示自己关注的基因
+#
 GO_results$geneID  <- sapply(strsplit(GO_results$geneID , "/"), function(x) paste(x[1:5], collapse = "/"))
 
 library(ggplot2)
