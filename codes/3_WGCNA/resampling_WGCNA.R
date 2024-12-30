@@ -43,7 +43,7 @@ save(tmf0, mods0, file = "/mnt/data/wangdanke/EAC_array/net_100.RData")
 nGenes = ncol(t(SCC_EXPR))
 # Define a matrix of labels for the original and all resampling runs
 labels = matrix(0, nGenes, nRuns + 1)
-labels[, 1] = colors ##这里的reference colors是final 参数的网络的color，为与上述的图对应起来，所有的网络配色都以最后的网络颜色作为标准
+labels[, 1] = colors 
 
 # Relabel modules in each of the resampling runs so that full and reampled modules with best overlaps have
 # the same labels. This is achieved by the function matchLabels.
