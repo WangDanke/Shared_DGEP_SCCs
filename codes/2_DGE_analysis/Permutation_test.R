@@ -1,4 +1,4 @@
-##创建NullDistribution
+##NullDistribution
 set.seed(20240704)
 options(stringsAsFactors=F)
 #source("http://bioconductor.org/biocLite.R"); biocLite("lme4")
