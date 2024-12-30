@@ -1,6 +1,6 @@
 ####
 #step1: read expression data
-#######GSE87410，ESCC(6个批次的数据集)，HNSC(六个批次的数据集)，CESC(两个批次的数据集)，CSCC(三个批次的数据集)，LUSC(两个批次的数据集)
+#######GSE87410，ESCC(6 batches datasets)，HNSC(6 batches datasets)，CESC(2 batches datasets)，CSCC(3 batches datasets)，LUSC(2 batches datasets)
 setwd("D:\\SCC_DGEP_shared\\SCC_ENA_seq\\LUSC\\GSE87410")
 
 # 
@@ -44,11 +44,11 @@ save(GSE87410,pheno_GSE87410,file = "GSE87410_anno.RData")
 
 ######step3: TPM transform
 #
-setwd("D:\\鳞癌分析\\泛鳞癌seq数据_标准参考基因组\\TPM_SCCs")
-load("D:/鳞癌分析/泛鳞癌seq数据_标准参考基因组/Counts_SCCs/GSE144293_anno.RData")
+setwd("D:\\SCC_DGEP_shared\\SCC_ENA_seq\\TPM_SCCs")
+load("D:\\SCC_DGEP_shared\\SCC_ENA_seq\\Counts_SCCs\\GSE144293_anno.RData")
 ########
 library(dplyr)
-##去重
+##
 GSE144293 <- GSE144293 %>% distinct(external_gene_name, .keep_all = TRUE)
 
 kb = GSE144293$gene_length/1000
