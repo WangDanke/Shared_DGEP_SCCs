@@ -28,7 +28,7 @@ for (col1 in colnames(data)) {
   }
 }
 
-# 查看结果
+# 
 print(cor_results)
 
 
@@ -40,10 +40,10 @@ cor_results$significance <- ifelse(cor_results$PValue < 0.001, "***",
                                           ifelse(cor_results$PValue < 0.05, "*", "")))
 
 ggplot(cor_results, aes(Column2,Column1,  fill = Correlation)) +
-  geom_tile(color = "black") +  # 绘制矩形块
-  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0) +  # 设置颜色渐变
+  geom_tile(color = "black") +  
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0) +  
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), 
-        axis.text.y = element_text(angle = 0, hjust = 1)) +  # 旋转坐标轴标签
+        axis.text.y = element_text(angle = 0, hjust = 1)) + 
   labs(title = "Correlation Heatmap", x = "Immune cell infiltration score", y = "Expression level")+
   geom_text(aes(label = significance), color = "black", size = 3)
