@@ -21,7 +21,7 @@ library(Hmisc)
 
 library("ConsensusClusterPlus")
 ######
-##聚类鉴别分型_TCGA
+##
 TCGA_SCC_EXPR = TCGA_SCC_EXPR[,-c(1,2,3)]
 SCC_TCGA_hub = TCGA_SCC_EXPR[hub_gene$gene,]
 SCC_TCGA_hub = log2(SCC_TCGA_hub+1)
