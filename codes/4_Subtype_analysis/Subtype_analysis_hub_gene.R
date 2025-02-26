@@ -1,6 +1,6 @@
 setwd("D:\\SCC_DGEP_shared\\SCCs_array\\Subtype_analysis")
 load("D:\\SCC_DGEP_shared\\SCCs_array\\WGCNA\\SCC_combined_combat_for_WGCNA.RData")
-load("D:D:\\SCC_DGEP_shared\\SCC_TCGA\\TCGA_4_SCCs.RData")
+load("D:\\SCC_DGEP_shared\\SCC_TCGA\\TCGA_4_SCCs.RData")
 ###Use the TCGA datasets to identify Subtypes, and GEO microarray dataset to validate the Subtypes
 TCGA_SCC_EXPR <- TCGA_SCC_EXPR[!duplicated(TCGA_SCC_EXPR$gene_name, fromLast=T), ]
 rownames(TCGA_SCC_EXPR) = TCGA_SCC_EXPR$gene_name
