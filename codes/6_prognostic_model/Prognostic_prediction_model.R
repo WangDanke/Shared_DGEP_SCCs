@@ -47,6 +47,35 @@ train_X <- as.matrix(train_X)
 # Use cross validation to select the optimal lambda value
 cv_fit <- cv.glmnet(train_X, train_y, family = "cox", type.measure = "deviance")
 
+
+########################
+##lambda sensitivity analysis
+lambda_seq <- cv_fit$lambda
+
+# lambdas that still retain ≥1 non-zero coefficient.
+nz <- sapply(lambda_seq, function(l) {
+  sum(coef(cv_fit, s = l) != 0)
+})
+
+valid_lambda <- lambda_seq[nz >= 2]
+
+lambda_A <- valid_lambda[1]     
+lambda_B <- valid_lambda[round(length(valid_lambda)/2)]
+lambda_C <- valid_lambda[length(valid_lambda)] 
+
+risk_A <- predict(cv_fit, train_X, s = lambda_A, type = "link")
+risk_B <- predict(cv_fit, train_X, s = lambda_B, type = "link")
+risk_C <- predict(cv_fit, train_X, s = lambda_C, type = "link")
+
+cor(risk_A, risk_B, method = "spearman")
+cor(risk_A, risk_C, method = "spearman")
+plot(risk_A, risk_C,
+     xlab = "Risk score (λ_min)",
+     ylab = "Risk score (λ_1se)",
+     main = "Sensitivity analysis of λ choice")
+abline(0,1,col="red",lty=2)
+
+
 # Draw a lambda path diagram to view the coefficients under different lambda values
 plot(cv_fit)
 
@@ -54,22 +83,38 @@ plot(cv_fit)
 coef(cv_fit, s = "lambda.min")
 
 
-selected_genes <- rownames(coef(cv_fit, s = "lambda.min"))[which(coef(cv_fit, s = "lambda.min") != 0)]
-selected_genes <- selected_genes[selected_genes != "(Intercept)"]  
+gene_names<- rownames(coef(cv_fit, s = "lambda.min"))[which(coef(cv_fit, s = "lambda.min") != 0)]
+gene_names <- gene_names[gene_names != "(Intercept)"]  
 
 # 
-formula <- as.formula(paste("Surv(survival_time, event) ~", paste(selected_genes, collapse = "+")))
+formula <- as.formula(paste("Surv(survival_time, event) ~", paste(gene_names, collapse = "+")))
 
 # 
 cox_model <- coxph(formula, data = train_data)
-summary(cox_model)  # 查看Cox回归模型的结果
-
+summary(cox_model)  # check the results
 ggforest(model = cox_model,data = train_data, main = 'harzard ratios of candidate genes',fontsize = 1) 
 
 
 # Calculate risk scores (on both the training and validation sets)）
 train_data$risk_score <- predict(cox_model, newdata = train_data, type = "risk")
 test_data$risk_score <- predict(cox_model, newdata = test_data, type = "risk")
+
+cox_cont <- coxph(Surv(survival_time, event) ~ risk_score, data = test_data)
+summary(cox_cont)
+library(survival)
+library(rms)
+
+dd <- datadist(test_data)
+options(datadist = "dd")
+
+fit_spline <- cph(Surv(survival_time, event) ~ rcs(risk_score, 3),
+                  data = test_data, x = TRUE, y = TRUE)
+
+plot(Predict(fit_spline, risk_score, fun = exp),
+     xlab = "Risk score",
+     ylab = "Hazard ratio")
+
+
 
 # Group by quartile and draw survival curves）
 q1 <- quantile(train_data$risk_score, 0.25)
@@ -86,8 +131,12 @@ ggsurvplot(fit_test, data = train_data, pval = TRUE, risk.table = TRUE,
            legend.title = "Risk Group", legend.labs = c("High Risk","Low Risk"),
            palette = c( "red","black"))
 
+#as the continuous variable
+train_data_Group$risk_group = factor(train_data_Group$risk_group,levels = c("Low", "High"))
+cox_fit <- coxph(Surv(survival_time, event) ~ risk_group, data = train_data_Group)
+summary(cox_fit)
 
-# Kaplan-Meier生存曲线（测试集）
+# Kaplan-Meier test dataset
 q1 <- quantile(test_data$risk_score, 0.25)
 q3 <- quantile(test_data$risk_score, 0.75)
 test_data$risk_group <- ifelse(
@@ -103,7 +152,9 @@ ggsurvplot(fit_test, data = test_data, pval = TRUE, risk.table = TRUE,
            legend.title = "Risk Group", legend.labs = c("High Risk","Low Risk"),
            palette = c( "red","black"))
 
-
+test_data_Group$risk_group = factor(test_data_Group$risk_group,levels = c("Low", "High"))
+cox_fit <- coxph(Surv(survival_time, event) ~ risk_group, data = test_data_Group)
+summary(cox_fit)
 
 ####independent dataset
 #####validation in an external dataset
@@ -130,7 +181,7 @@ load("D:\\SCC_DGEP_shared\\SCCs_array\\Subtype_analysis\\Prognostic_model\\GSE53
 load("D:\\SCC_DGEP_shared\\SCCs_array\\Subtype_analysis\\Prognostic_model\\GSE53625_EXPR.RData")
 
 GSE53625_T = GSE53625[,rownames(GSE53625_pheno)]
-GSE53625_T_genes <- as.data.frame(t(GSE53625_T[selected_genes,]))
+GSE53625_T_genes <- as.data.frame(t(GSE53625_T[gene_names,]))
 GSE53625_T_genes$survival_time = GSE53625_pheno$survival_time
 GSE53625_T_genes$event = GSE53625_pheno$event
 
@@ -147,7 +198,30 @@ GSE53625_T_genes$survival_time = as.numeric(GSE53625_T_genes$survival_time)
 GSE53625_T_genes = as.data.frame(GSE53625_T_genes)
 
 GSE53625_T_genes$risk_score = predict(cox_model, newdata = GSE53625_T_genes, type = "risk")
-GSE53625_T_genes = subset(GSE53625_T_genes,GSE53625_T_genes$survival_time < 4.9)
+
+
+##
+mu  <- mean(train_data$risk_score)
+sdv <- sd(train_data$risk_score)
+
+GSE53625_T_genes$risk_score_z <- 
+  (GSE53625_T_genes$risk_score - mu) / sdv
+
+cox_cont <- coxph(Surv(survival_time, event) ~ risk_score, data = GSE53625_T_genes)
+summary(cox_cont)
+library(survival)
+library(rms)
+
+dd <- datadist(GSE53625_T_genes)
+options(datadist = "dd")
+
+fit_spline <- cph(Surv(survival_time, event) ~ rcs(risk_score_z, 3),
+                  data = GSE53625_T_genes, x = TRUE, y = TRUE)
+
+plot(Predict(fit_spline, risk_score_z, fun = exp),
+     xlab = "Risk score",
+     ylab = "Hazard ratio")
+
 
 ##Group by quartile and draw survival curves
 q1 <- quantile(GSE53625_T_genes$risk_score, 0.25)
@@ -165,13 +239,41 @@ ggsurvplot(fit_test, data = GSE53625_T_genes, pval = TRUE, risk.table = TRUE,
            palette = c( "red","black"))
 
 
-##combind all samples （train_test_external datasets)
-TCGA_data = rbind(train_data_Group,test_data_Group)
-all = rbind(GSE53625_T_genes,TCGA_data[,colnames(GSE53625_T_genes)])
+
+# Group based on the medium
+median_risk <- median(GSE53625_T_genes$risk_score)
+GSE53625_T_genes$risk_group_median <- ifelse(
+  GSE53625_T_genes$risk_score >= median_risk, "High", "Low"
+)
+
+# survival_analysis
+fit_test_median <- survfit(Surv(survival_time, event) ~ risk_group_median, 
+                           data = GSE53625_T_genes)
+
+# Km
+ggsurvplot(fit_test_median, 
+           data = GSE53625_T_genes, 
+           pval = TRUE, 
+           risk.table = TRUE,
+           title = "test dataset (Median split)",
+           legend.title = "Risk Group", 
+           legend.labs = c("High Risk", "Low Risk"),
+           palette = c("red", "black"))
+
+GSE53625_T_genes$risk_group_median = factor(GSE53625_T_genes$risk_group_median,levels = c("Low", "High"))
+cox_fit <- coxph(Surv(survival_time, event) ~ risk_group_median, data = GSE53625_T_genes)
+summary(cox_fit)
 
 
-fit_test <- survfit(Surv(survival_time, event) ~ risk_group, data = all)
-ggsurvplot(fit_test, data = all, pval = TRUE, risk.table = TRUE,
-           title = "Training + test + external datasets",
-           legend.title = "Risk Group", legend.labs = c("High Risk","Low Risk"),
-           palette = c( "red","black"))
+
+
+
+
+
+
+
+
+
+
+
+
